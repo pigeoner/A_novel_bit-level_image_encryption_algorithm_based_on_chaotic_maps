@@ -1,7 +1,7 @@
 from analysis import *
 from encrypt import encrypt
 from decrypt import decrypt
-img_path = "./images/rabbit.jpg"
+img_path = "./images/lena.png"
 encrypt_img_path, res = encrypt(img_path, show=True)
 decrypt(encrypt_img_path, img_path, show=True)
 histogram(encrypt_img_path)

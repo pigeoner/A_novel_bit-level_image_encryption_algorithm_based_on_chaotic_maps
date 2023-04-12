@@ -7,6 +7,7 @@ from matplotlib import pyplot as plt
 def histogram(img_path):
     src = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
     plt.hist(src.ravel(), 256)
+    plt.title("直方图分析")
     plt.show()
 
 

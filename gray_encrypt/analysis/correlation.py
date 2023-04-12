@@ -123,7 +123,7 @@ def show_correlation(raw_img, encrypt_img, N=2000):
     # 原图像相邻像素分布
     plt.subplot(222)
     plt.scatter(r_Rxy[3], r_Rxy[4], s=1)
-    plt.title('像素分布')
+    plt.title('原图像像素分布')
     # 加密图像
     plt.subplot(223)
     plt.imshow(e_img, cmap='gray')
@@ -131,7 +131,7 @@ def show_correlation(raw_img, encrypt_img, N=2000):
     # 加密图像相邻像素分布
     plt.subplot(224)
     plt.scatter(e_Rxy[3], e_Rxy[4], s=1)
-    plt.title('像素分布')
+    plt.title('加密图像像素分布')
     plt.show()
 
     return r_Rxy[0:3], e_Rxy[0:3]
