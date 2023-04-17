@@ -3,7 +3,7 @@ from utils import PWLCM
 from matplotlib import pyplot as plt
 
 
-def bifurcation_diagram(seed, n_skip, n_iter, step=1e-4, r_min=1e-16):
+def bifurcation_diagram(seed, n_skip, n_iter, step=1e-4, u_min=1e-16):
     '''
     绘制分岔图
     '''
@@ -15,7 +15,7 @@ def bifurcation_diagram(seed, n_skip, n_iter, step=1e-4, r_min=1e-16):
     X = []
 
     # Create the r values to loop. For each r value we will plot n_iter points
-    u_range = np.linspace(r_min, 0.5-(1e-16), int(1/step))
+    u_range = np.linspace(u_min, 0.5-(1e-16), int(1/step))
     for u in u_range:
         U.extend([u]*(n_iter+1))
         X.extend(PWLCM(seed, u, n_iter+n_skip+1)[n_skip:])
@@ -23,7 +23,7 @@ def bifurcation_diagram(seed, n_skip, n_iter, step=1e-4, r_min=1e-16):
     # Plot the data
     plt.plot(U, X, ls='', marker=',')
     plt.ylim(0, 1)
-    plt.xlim(r_min, 0.5)
+    plt.xlim(u_min, 0.5)
     plt.xlabel('μ')
     plt.ylabel('X')
     plt.show()

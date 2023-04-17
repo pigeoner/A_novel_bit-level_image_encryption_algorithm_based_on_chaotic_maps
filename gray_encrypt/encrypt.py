@@ -1,6 +1,7 @@
 from math import floor
 import cv2
 import numpy as np
+import os
 from random import uniform
 from copy import deepcopy
 from matplotlib import pyplot as plt
@@ -104,6 +105,8 @@ def encrypt(img_path, x0=None, u1=None, y0=None, u2=None, n_round=1, params_path
     # 01列表压缩为 int 整数
     A11_0_int = int('1' + ''.join([str(i) for i in A11_0[::-1]]), 2)
     A22_0_int = int('1' + ''.join([str(i) for i in A22_0[::-1]]), 2)
+    if not os.path.exists('./params'):
+        os.mkdir('./params')
     np.savez(f'./params/{params_path}', x0=x0, u1=u1, y0=y0,
              u2=u2, A11_0=A11_0_int, A22_0=A22_0_int, n_round=n_round)
     return encrypt_img_path, res
