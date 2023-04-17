@@ -106,18 +106,35 @@ def encrypt(
         A2 = deepcopy(B2)
 
     # C1，C2 序列合并成加密图像
-    C = np.append(B1, B2).reshape(8, M, N)
-    res = np.zeros((M, N), dtype=np.uint8)
+    C_bitplanes = np.append(B1, B2).reshape(8, M, N)
+    C = np.zeros((M, N), dtype=np.uint8)
     for i in range(8):
-        res = cv2.bitwise_or(res, C[i, :, :] << i)
+        C = cv2.bitwise_or(C, C_bitplanes[i, :, :] << i)
 
-    cv2.imwrite(encrypt_img_path, res)  # 保存图像
+    # 像素级双向扩散
+    z0 = ((y0 + M*N) / 256) % 1  # key3的初始值z0
+    u3 = u2  # key3的参数u3
+    Z_raw = PWLCM(z0, u3, N0 + 2 * M * N)[N0:]  # 生成长度为N0+2*M*N的混沌序列
+    # 标准化，将Z_raw中每个小数转换为整数并对256取模得到0~255之间的整数作为Z的值
+    Z = [floor(z * 1e14) % 256 for z in Z_raw]
+    Z1, Z2 = Z[:M * N], Z[M * N:]
+    H = C.ravel()  # 横向展开
+    H[0] = H[0] ^ (M*N) ^ Z1[0]  # 第一个像素点的加密
+    for i in range(1, M*N):
+        H[i] = H[i] ^ H[i - 1] ^ Z1[i]
+    V = np.rot90(H.reshape(M, N), 2).T.ravel()  # 纵向展开
+    V[0] = V[0] ^ (M*N) ^ Z2[0]  # 第一个像素点的加密
+    for i in range(1, M*N):
+        V[i] = V[i] ^ V[i - 1] ^ Z2[i]
+    E = np.rot90(V.reshape(M, N).T, -2)  # 获得加密图像
+
+    cv2.imwrite(encrypt_img_path, E)  # 保存图像
 
     # 显示加密图像
     if show:
         print('加密完成!')
         plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文乱码
-        plt.imshow(res, cmap='gray')
+        plt.imshow(E, cmap='gray')
         plt.title('加密图像')
         plt.show()
 
@@ -130,7 +147,7 @@ def encrypt(
             os.mkdir('./params')
         np.savez(f'./params/{params_path}', x0=x0, u1=u1, y0=y0,
                  u2=u2, A11_0=A11_0_int, A22_0=A22_0_int, n_round=n_round)
-    return encrypt_img_path, res
+    return encrypt_img_path, E
 
 
 if __name__ == '__main__':
