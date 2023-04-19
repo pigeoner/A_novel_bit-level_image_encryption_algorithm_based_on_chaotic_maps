@@ -14,27 +14,30 @@ def encrypt_sensitivity(img_path, key=None, modified_key=None):
 
     # 结果展示
     # 原图像
-    r_img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    r_img = cv2.imread(img_path)
+    b, g, r = cv2.split(r_img)
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文乱码
     plt.subplot(221)
-    plt.imshow(r_img, cmap='gray')
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('原图像')
 
     # key加密的图像
     _, key_img = encrypt(img_path, *key)
     plt.subplot(222)
-    plt.imshow(key_img, cmap='gray')
+    b, g, r = cv2.split(key_img)
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('key加密的图像')
 
     # 修改过的key加密的图像
     _, modified_key_img = encrypt(img_path, *modified_key)
     plt.subplot(223)
-    plt.imshow(modified_key_img, cmap='gray')
+    b, g, r = cv2.split(modified_key_img)
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('修改过的key加密的图像')
 
     # 两者差值
     plt.subplot(224)
-    plt.imshow(np.abs(modified_key_img - key_img), cmap='gray')
+    plt.imshow(np.abs(modified_key_img - key_img))
     plt.title('两者差值')
     plt.show()
 
@@ -48,16 +51,18 @@ def decrypt_sensitivity(img_path, encrypt_img_path, key=None, incorrect_key=None
 
     # 结果展示
     # 原图像
-    r_img = cv2.imread(img_path, cv2.IMREAD_GRAYSCALE)
+    r_img = cv2.imread(img_path)
     plt.rcParams['font.sans-serif'] = ['SimHei']  # 中文乱码
     plt.subplot(221)
-    plt.imshow(r_img, cmap='gray')
+    b, g, r = cv2.split(r_img)
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('原图像')
 
     # 原始key加密的图像
     _, key_img = encrypt(img_path, *key)
     plt.subplot(222)
-    plt.imshow(key_img, cmap='gray')
+    b, g, r = cv2.split(key_img)
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('原始key加密的图像')
 
     # 修改过的key解密的图像
@@ -71,13 +76,15 @@ def decrypt_sensitivity(img_path, encrypt_img_path, key=None, incorrect_key=None
     incorrect_decrypt_img = decrypt(
         encrypt_img_path, params_path='incorrect_params.npz')
     plt.subplot(223)
-    plt.imshow(incorrect_decrypt_img, cmap='gray')
+    b, g, r = cv2.split(incorrect_decrypt_img)
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('修改过的key解密的图像')
 
     # 原始key解密的图像
     decrypt_img = decrypt(encrypt_img_path, params_path='params.npz')
     plt.subplot(224)
-    plt.imshow(decrypt_img, cmap='gray')
+    b, g, r = cv2.split(decrypt_img)
+    plt.imshow(cv2.merge([r, g, b]))
     plt.title('原始key解密的图像')
     plt.show()
 

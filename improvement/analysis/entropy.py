@@ -12,24 +12,37 @@ import matplotlib.pyplot as plt
 
 
 def _entropy(img):
-    img = cv2.imread(img, cv2.IMREAD_GRAYSCALE)
-    h, w = img.shape
-    gray, num = np.unique(img, return_counts=True)
-    entropy = 0
+    img = cv2.imread(img)
+    w, h, _ = img.shape
+    B, G, R = cv2.split(img)
+    gray, num1 = np.unique(R, return_counts=True)
+    gray, num2 = np.unique(G, return_counts=True)
+    gray, num3 = np.unique(B, return_counts=True)
+    R_entropy = 0
+    G_entropy = 0
+    B_entropy = 0
 
     for i in range(len(gray)):
-        p = num[i]/(w*h)
-        entropy -= p*(math.log(p, 2))
-    return entropy
+        p1 = num1[i]/(w*h)
+        p2 = num2[i]/(w*h)
+        p3 = num3[i]/(w*h)
+        R_entropy -= p1*(math.log(p1, 2))
+        G_entropy -= p2*(math.log(p2, 2))
+        B_entropy -= p3*(math.log(p3, 2))
+    return R_entropy, G_entropy, B_entropy
 
 
 def entropy(raw_img, encrypt_img):
-    # 图像lena的熵
-    raw_entropy = _entropy(raw_img)
-    encrypt_entropy = _entropy(encrypt_img)
-    print('==================信息熵==================')
-    print('原图像: \t{:.5}'.format(raw_entropy))
-    print('加密图像: \t{:.5}'.format(encrypt_entropy))
+    R_entropy, G_entropy, B_entropy = _entropy(raw_img)
+    print('=====原图像信息熵=====')
+    print('通道R:\t\t{:.5}'.format(R_entropy))
+    print('通道G:\t\t{:.5}'.format(G_entropy))
+    print('通道B:\t\t{:.5}'.format(B_entropy))
+    R_entropy, G_entropy, B_entropy = _entropy(encrypt_img)
+    print('====加密图像信息熵====')
+    print('通道R:\t\t{:.5}'.format(R_entropy))
+    print('通道G:\t\t{:.5}'.format(G_entropy))
+    print('通道B:\t\t{:.5}'.format(B_entropy))
 
 
 if __name__ == '__main__':
