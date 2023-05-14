@@ -11,7 +11,7 @@ from utils import img_bit_decomposition, PWLCM
 
 def encrypt(
     img_path,
-    x0=None, u1=None, y0=None, u2=None,  # 密钥
+    x0=None, u1=None, y0=None, u2=None, a1=None, a2=None, # 密钥
     n_round=1,  # 加密轮数
     params_path='params.npz',  # 参数保存路径
     show=False,  # 是否显示图像
@@ -31,6 +31,8 @@ def encrypt(
         u1 = uniform(1e-16, 0.5-1e-16) if not u1 else u1  # key1的初始值u1
         y0 = uniform(1e-16, 1-1e-16) if not y0 else y0  # 初始值y0
         u2 = uniform(1e-16, 0.5-1e-16) if not u2 else u2  # 初始值u2
+        a1 = uniform(40,100) if not a1 else a1
+        a2 = uniform(40,100) if not a2 else a2
     else:
         use_params_path = f"./params/{params_path}"
         if os.path.exists(use_params_path):
@@ -39,9 +41,12 @@ def encrypt(
             u1 = params['u1']
             y0 = params['y0']
             u2 = params['u2']
+            a1 = params['a1']
+            a2 = params['a2']
             n_round = params['n_round']
         else:
             raise FileNotFoundError(f"未找到参数文件: {use_params_path}")
+    # print(f"使用的参数为: \nx0={x0},\nu1={u1},\ny0={y0},\nu2={u2},\na1={a1},\na2={a2}")
     filename, ext = img_path.rsplit('.', 1)
     encrypt_img_path = f"{filename}_encrypt.png"
 
@@ -63,8 +68,6 @@ def encrypt(
     G_A2 = G_bitplanes[4:, :, :].ravel()  # G的低位平面
     R_A1 = R_bitplanes[:4, :, :].ravel()  # R的高位平面
     R_A2 = R_bitplanes[4:, :, :].ravel()  # R的低位平面
-    B_A2, G_A2 = G_A2, B_A2  # 交换B和G的低位平面
-    G_A2, R_A2 = R_A2, G_A2  # 交换G和R的低位平面
     E_BGR = []
     A11_0 = [[], [], []]
     A22_0 = [[], [], []]
@@ -72,7 +75,7 @@ def encrypt(
         A1, A2 = b
         # Piecewise Logistic Chaotic Map
         N0 = 1000  # 丢弃前N0个数
-        PWLCM_MAP_X = PWLCM(x0, u1, N0 + M*N)[N0:]  # 生成长度为N0+M*N的混沌序列
+        PWLCM_MAP_X = PWLCM(x0, u1, a1, N0 + M*N)[N0:]  # 生成长度为N0+M*N的混沌序列
         # key1，将[PWLCM_MAP_X]中每个小数转换为整数并对256取模得到0~255之间的整数作为key1的值
         X1 = [floor(i * 1e14) % 256 for i in PWLCM_MAP_X]
         X1_reshape = np.mat(X1, dtype=np.uint8).reshape(M, N)
@@ -99,7 +102,7 @@ def encrypt(
             sum = np.sum(B1) + np.sum(B2)
 
             s0 = (y0 + sum / L) % 1  # key2的初始值s0
-            S = PWLCM(s0, u2, N0 + 2 * L)[N0:]
+            S = PWLCM(s0, u2, a2, N0 + 2 * L)[N0:]
             S1, S2 = S[:L], S[L:]
             # 将S1中每个小数转换为整数并对L取模得到0~L-1之间的整数作为Y的值
             Y = [floor(s1 * 1e14) % L for s1 in S1]
@@ -121,23 +124,7 @@ def encrypt(
         C = np.zeros((M, N), dtype=np.uint8)
         for i in range(8):
             C = cv2.bitwise_or(C, C_bitplanes[i, :, :] << i)
-
-        # 像素级双向扩散
-        z0 = ((y0 + M*N) / 256) % 1  # key3的初始值z0
-        u3 = u2  # key3的参数u3
-        Z_raw = PWLCM(z0, u3, N0 + 2 * M * N)[N0:]  # 生成长度为N0+2*M*N的混沌序列
-        # 标准化，将Z_raw中每个小数转换为整数并对256取模得到0~255之间的整数作为Z的值
-        Z = [floor(z * 1e14) % 256 for z in Z_raw]
-        Z1, Z2 = Z[:M * N], Z[M * N:]
-        H = C.ravel()  # 横向展开
-        H[0] = H[0] ^ (M*N) ^ Z1[0]  # 第一个像素点的加密
-        for i in range(1, M*N):
-            H[i] = H[i] ^ H[i - 1] ^ Z1[i]
-        V = np.rot90(H.reshape(M, N), 2).T.ravel()  # 纵向展开
-        V[0] = V[0] ^ (M*N) ^ Z2[0]  # 第一个像素点的加密
-        for i in range(1, M*N):
-            V[i] = V[i] ^ V[i - 1] ^ Z2[i]
-        E = np.rot90(V.reshape(M, N).T, -2)  # 获得加密图像
+        E = C
         E_BGR.append(E)
     E_BGR = E_BGR[::-1]
     E = cv2.merge(E_BGR)
@@ -161,7 +148,7 @@ def encrypt(
         if not os.path.exists('./params'):
             os.mkdir('./params')
         np.savez(f'./params/{params_path}', x0=x0, u1=u1, y0=y0,
-                 u2=u2, A11_0=A11_0_int, A22_0=A22_0_int, n_round=n_round)
+                 u2=u2, a1=a1, a2=a2, A11_0=A11_0_int, A22_0=A22_0_int, n_round=n_round)
     return encrypt_img_path, E
 
 

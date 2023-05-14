@@ -1,5 +1,3 @@
-# 原代码地址：https://blog.csdn.net/qq_41137110/article/details/115675014
-
 import cv2
 import math
 import numpy as np
@@ -33,16 +31,19 @@ def _entropy(img):
 
 
 def entropy(raw_img, encrypt_img):
-    R_entropy, G_entropy, B_entropy = _entropy(raw_img)
-    print('=====原图像信息熵=====')
-    print('通道R:\t\t{:.5}'.format(R_entropy))
-    print('通道G:\t\t{:.5}'.format(G_entropy))
-    print('通道B:\t\t{:.5}'.format(B_entropy))
-    R_entropy, G_entropy, B_entropy = _entropy(encrypt_img)
-    print('====加密图像信息熵====')
-    print('通道R:\t\t{:.5}'.format(R_entropy))
-    print('通道G:\t\t{:.5}'.format(G_entropy))
-    print('通道B:\t\t{:.5}'.format(B_entropy))
+    with open('result.txt','a+', encoding='utf8') as f:
+        R_entropy, G_entropy, B_entropy = _entropy(raw_img)
+        f.write('====原图像信息熵====\n')
+        f.write('通道R:\t\t{:.5}\n'.format(R_entropy))
+        f.write('通道G:\t\t{:.5}\n'.format(G_entropy))
+        f.write('通道B:\t\t{:.5}\n'.format(B_entropy))
+        f.write('\n')
+        R_entropy, G_entropy, B_entropy = _entropy(encrypt_img)
+        f.write('===加密图像信息熵===\n')
+        f.write('通道R:\t\t{:.5}\n'.format(R_entropy))
+        f.write('通道G:\t\t{:.5}\n'.format(G_entropy))
+        f.write('通道B:\t\t{:.5}\n'.format(B_entropy))
+        f.write('\n')
 
 
 if __name__ == '__main__':

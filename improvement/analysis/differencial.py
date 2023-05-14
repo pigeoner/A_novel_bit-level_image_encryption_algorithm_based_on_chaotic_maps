@@ -1,8 +1,5 @@
-# 原代码地址：https://blog.csdn.net/qq_41137110/article/details/115675014
-
 import cv2
 import numpy as np
-import matplotlib.pyplot as plt
 from encrypt import encrypt
 from os import remove
 
@@ -60,31 +57,49 @@ def UACI(img1, img2):
     return R_uaci, G_uaci, B_uaci
 
 
-def differencial(img_path):
+def differencial(img_path, ntimes=1):
     img_path_2 = img_path.rsplit('.', 1)[0] + '_differencial.png'
     img = cv2.imread(img_path)
     img[0][0][0] = img[0][0][0] ^ 1  # 修改B通道第一个像素值的第5位
     cv2.imwrite(img_path_2, img)
     _, img1 = encrypt(img_path)
     _, img2 = encrypt(img_path_2)
-    R_npcr, G_npcr, B_npcr = NPCR(img1, img2)
+    R_npcr_mean = []
+    G_npcr_mean = []
+    B_npcr_mean = []
+    for i in range(ntimes):
+        R_npcr, G_npcr, B_npcr = NPCR(img1, img2)
+        R_npcr_mean.append(R_npcr)
+        G_npcr_mean.append(G_npcr)
+        B_npcr_mean.append(B_npcr)
     # print('\n   *差分攻击*   ')
-    print('==========PSNR==========')
-    # 百分数表示，保留小数点后4位
-    print('Red  :\t\t{:.4%}'.format(R_npcr))
-    print('Green:\t\t{:.4%}'.format(G_npcr))
-    print('Blue :\t\t{:.4%}'.format(B_npcr))
+    with open('result.txt','a+', encoding='utf8') as f:
+        f.write('========NPCR========\n')
+        # 百分数表示，保留小数点后4位
+        f.write('Red  :\t{:.4%}\n'.format(np.mean(R_npcr_mean)))
+        f.write('Green:\t{:.4%}\n'.format(np.mean(G_npcr_mean)))
+        f.write('Blue :\t{:.4%}\n'.format(np.mean(B_npcr_mean)))
+        f.write('\n')
 
-    R_uaci, G_uaci, B_uaci = UACI(img1, img2)
-    print('==========UACI==========')
-    # 百分数表示，保留小数点后4位
-    print('Red  :\t\t{:.4%}'.format(R_uaci))
-    print('Green:\t\t{:.4%}'.format(G_uaci))
-    print('Blue :\t\t{:.4%}'.format(B_uaci))
+    R_uaci_mean = []
+    G_uaci_mean = []
+    B_uaci_mean = []
+    for i in range(100):
+        R_uaci, G_uaci, B_uaci = UACI(img1, img2)
+        R_uaci_mean.append(R_uaci)
+        G_uaci_mean.append(G_uaci)
+        B_uaci_mean.append(B_uaci)
+    with open('result.txt', 'a+', encoding='utf8') as f:
+        f.write('========UACI========\n')
+        # 百分数表示，保留小数点后4位
+        f.write('Red  :\t{:.4%}\n'.format(np.mean(R_uaci_mean)))
+        f.write('Green:\t{:.4%}\n'.format(np.mean(G_uaci_mean)))
+        f.write('Blue :\t{:.4%}\n'.format(np.mean(B_uaci_mean)))
+        f.write('\n')
     remove(img_path_2)
     remove(img_path_2.rsplit('.', 1)[0] + '_encrypt.png')
 
 
 if __name__ == '__main__':
     img_path = '../images/lena.png'
-    differencial(img_path)
+    differencial(img_path, ntimes=100)

@@ -3,14 +3,15 @@ from matplotlib import pyplot as plt
 from encrypt import encrypt
 from decrypt import decrypt
 import numpy as np
-from copy import deepcopy
 
 
 def encrypt_sensitivity(img_path, key=None, modified_key=None):
-    key = [0.01234567890123, 0.12345678912345,
-           0.01234567891234, 0.21234567891234] if not key else key
-    modified_key = [0.01234567890124, 0.12345678912345,
-                    0.01234567891234, 0.21234567891234] if not modified_key else modified_key
+    key = [0.35064345739679, 0.18323119961402,
+           0.35575518510453, 0.24485837450082,
+           86.720536734684, 58.084300779634] if not key else key
+    modified_key = [0.35064345739679, 0.18323119961402,
+                    0.35575518510454, 0.24485837450082,
+                    86.720536734684, 58.084300779634] if not modified_key else modified_key
 
     # 结果展示
     # 原图像
@@ -43,11 +44,13 @@ def encrypt_sensitivity(img_path, key=None, modified_key=None):
 
 
 def decrypt_sensitivity(img_path, encrypt_img_path, key=None, incorrect_key=None):
-    key = [0.01234567890123, 0.12345678912345,
-           0.01234567891234, 0.21234567891234] if not key else key
+    key = [0.35064345739679, 0.18323119961402,
+           0.35575518510453, 0.24485837450082,
+           86.720536734684, 58.084300779634] if not key else key
     if not incorrect_key:
-        incorrect_key = deepcopy(key)
-        incorrect_key[0] += 0.00000000000001
+        incorrect_key = [0.35064345739679, 0.18323119961402,
+                        0.35575518510454, 0.24485837450082,
+                        86.720536734684, 58.084300779634]
 
     # 结果展示
     # 原图像
@@ -71,6 +74,7 @@ def decrypt_sensitivity(img_path, encrypt_img_path, key=None, incorrect_key=None
     np.savez('./params/incorrect_params.npz',
              x0=incorrect_key[0], u1=incorrect_key[1],
              y0=incorrect_key[2], u2=incorrect_key[3],
+             a1=incorrect_key[4], a2=incorrect_key[5],
              A11_0=raw_params['A11_0'], A22_0=raw_params['A22_0'],
              n_round=raw_params['n_round'])
     incorrect_decrypt_img = decrypt(

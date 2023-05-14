@@ -11,11 +11,13 @@ def decrypt(encrypt_img_path, raw_img_path=None, params_path='params.npz', show=
     解密图像
     '''
     npz_file = np.load(f"./params/{params_path}")  # 加载参数
-    x0, u1, y0, u2, A11_0, A22_0, n_round = \
+    x0, u1, y0, u2, a1, a2, A11_0, A22_0, n_round = \
         npz_file['x0'], \
         npz_file['u1'], \
         npz_file['y0'], \
         npz_file['u2'], \
+        npz_file['a1'], \
+        npz_file['a2'], \
         npz_file['A11_0'], \
         npz_file['A22_0'], \
         npz_file['n_round']
@@ -48,23 +50,7 @@ def decrypt(encrypt_img_path, raw_img_path=None, params_path='params.npz', show=
     N0 = 1000  # 舍弃前N0个数
     for ib, b in enumerate([B, G, R]):
         C = b
-        # 逆双向扩散
-        z0 = ((y0 + M*N) / 256) % 1  # key3的初始值z0
-        u3 = u2  # key3的参数u3
-        Z_raw = PWLCM(z0, u3, N0 + 2 * M * N)[N0:]  # 生成长度为N0+2*M*N的混沌序列
-        Z = [floor(z * 1e14) % 256 for z in Z_raw]  # 标准化
-        Z1, Z2 = Z[:M * N], Z[M * N:]
-        V = np.rot90(C, 2).T.ravel()
-        for i in range(M*N - 1, 0, -1):
-            V[i] = V[i] ^ V[i - 1] ^ Z2[i]
-        V[0] = V[0] ^ (M*N) ^ Z2[0]  # 第一个像素点的解密
-        H = np.rot90(V.reshape(M, N).T, -2).ravel()
-        for i in range(M*N - 1, 0, -1):
-            H[i] = H[i] ^ H[i - 1] ^ Z1[i]
-        H[0] = H[0] ^ (M*N) ^ Z1[0]  # 第一个像素点的解密
-        C = H.reshape(M, N)
-
-        PWLCM_MAP_X = PWLCM(x0, u1, N0 + M*N)[N0:]
+        PWLCM_MAP_X = PWLCM(x0, u1, a1, N0 + M*N)[N0:]
         X1 = [floor(i * 1e14) % 256 for i in PWLCM_MAP_X]  # key1
         X1_reshape = np.mat(X1, dtype=np.uint8).reshape(M, N)
         X1_bitplanes = img_bit_decomposition(X1_reshape)  # key1的位平面分解
@@ -80,7 +66,7 @@ def decrypt(encrypt_img_path, raw_img_path=None, params_path='params.npz', show=
             # 逆混淆
             sum = np.sum(C1) + np.sum(C2)  # C1 和 C2 的和
             s0 = (y0 + sum / L) % 1  # key2的初始值s0
-            S = PWLCM(s0, u2, N0 + 2 * L)[N0:]
+            S = PWLCM(s0, u2, a2, N0 + 2 * L)[N0:]
             S1, S2 = S[:L], S[L:]
             Y = [floor(s1 * 1e14) % L for s1 in S1]
             Z = [floor(s2 * 1e14) % L for s2 in S2]
@@ -108,9 +94,6 @@ def decrypt(encrypt_img_path, raw_img_path=None, params_path='params.npz', show=
             C1 = deepcopy(A1)
             C2 = deepcopy(A2)
         A.append([A1, A2])
-
-    A[0][1], A[1][1] = A[1][1], A[0][1]
-    A[1][1], A[2][1] = A[2][1], A[1][1]
 
     A_BGR = []
     for e in A:
