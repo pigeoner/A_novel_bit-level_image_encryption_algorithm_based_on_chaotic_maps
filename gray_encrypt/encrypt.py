@@ -8,19 +8,39 @@ from matplotlib import pyplot as plt
 from utils import img_bit_decomposition, PWLCM
 
 
-def encrypt(img_path, x0=None, u1=None, y0=None, u2=None, n_round=1, params_path='params.npz', show=False):
+def encrypt(
+    img_path,
+    x0=None, u1=None, y0=None, u2=None,  # 密钥
+    n_round=1,  # 加密轮数
+    params_path='params.npz',  # 参数保存路径
+    show=False,  # 是否显示图像
+    use_params=False  # 是否使用已有参数
+):
     '''
     加密图像
     x0, u1, y0, u2: 混沌序列的初始值和参数
     N0: 丢弃前N0个数
     n_round: 加密轮数
-    params_path: 参数保存路径
+    params_path: 参数保存路径，只需要写文件名+后缀，不需要写绝对路径
     show: 是否显示图像
+    use_params: 是否使用已有参数
     '''
-    x0 = uniform(1e-16, 1-1e-16) if not x0 else x0  # key1的初始值x0
-    u1 = uniform(1e-16, 0.5-1e-16) if not u1 else u1  # key1的初始值u1
-    y0 = uniform(1e-16, 1-1e-16) if not y0 else y0  # 初始值y0
-    u2 = uniform(1e-16, 0.5-1e-16) if not u2 else u2  # 初始值u2
+    if not use_params:
+        x0 = uniform(1e-16, 1-1e-16) if not x0 else x0  # key1的初始值x0
+        u1 = uniform(1e-16, 0.5-1e-16) if not u1 else u1  # key1的初始值u1
+        y0 = uniform(1e-16, 1-1e-16) if not y0 else y0  # 初始值y0
+        u2 = uniform(1e-16, 0.5-1e-16) if not u2 else u2  # 初始值u2
+    else:
+        use_params_path = f"./params/{params_path}"
+        if os.path.exists(use_params_path):
+            params = np.load(use_params_path)
+            x0 = params['x0']
+            u1 = params['u1']
+            y0 = params['y0']
+            u2 = params['u2']
+            n_round = params['n_round']
+        else:
+            raise FileNotFoundError(f"未找到参数文件: {use_params_path}")
     filename, ext = img_path.rsplit('.', 1)
     encrypt_img_path = f"{filename}_encrypt.png"
 
@@ -103,12 +123,13 @@ def encrypt(img_path, x0=None, u1=None, y0=None, u2=None, n_round=1, params_path
 
     # 保存参数
     # 01列表压缩为 int 整数
-    A11_0_int = int('1' + ''.join([str(i) for i in A11_0[::-1]]), 2)
-    A22_0_int = int('1' + ''.join([str(i) for i in A22_0[::-1]]), 2)
-    if not os.path.exists('./params'):
-        os.mkdir('./params')
-    np.savez(f'./params/{params_path}', x0=x0, u1=u1, y0=y0,
-             u2=u2, A11_0=A11_0_int, A22_0=A22_0_int, n_round=n_round)
+    if not use_params:
+        A11_0_int = int('1' + ''.join([str(i) for i in A11_0[::-1]]), 2)
+        A22_0_int = int('1' + ''.join([str(i) for i in A22_0[::-1]]), 2)
+        if not os.path.exists('./params'):
+            os.mkdir('./params')
+        np.savez(f'./params/{params_path}', x0=x0, u1=u1, y0=y0,
+                 u2=u2, A11_0=A11_0_int, A22_0=A22_0_int, n_round=n_round)
     return encrypt_img_path, res
 
 
